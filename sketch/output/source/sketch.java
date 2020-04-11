@@ -33,7 +33,9 @@ float   ratio        = 0.0f;
 boolean logEnabled   = false;
 boolean[] statusBits = new boolean[8];
 int     controllerStatus = 0;
-float   lastO3Disp, lastTempDisp, lastHumiDisp;
+
+float   lastO3Disp, lastTempDisp, lastHumiDisp, lastGenDisp, lastUVDisp;
+String[] nameOfPeripherals = {"GEN","FAN","UVC","HMD","LCK","NA","NA","NA"};
 
 public void drawGrid(){
   stroke(50);
@@ -45,17 +47,22 @@ public void drawGrid(){
   }
 }
 
-public void keyPressed(){
-  if (key == 'l') {
-    logEnabled = !logEnabled;
-    println("Log: "+logEnabled);
-    if (logEnabled){
-      beginLog();
-    }
-    else {
-      endLog();
-    }
+public void logger(boolean on){
+  if (on){
+    beginLog();
+  } else {
+    endLog();
   }
+}
+
+public void mousePressed(){
+  if ( mouseX > width-100 &&
+       mouseX < width &&
+       mouseY > 10 &&
+       mouseY < 90) {
+         logEnabled = !logEnabled;
+         logger(logEnabled);
+       }
 }
 
 public void setup() {
@@ -83,6 +90,7 @@ public void setup() {
   }
 
   background(42);
+  ellipseMode(CENTER);
   drawGrid();
   file = new datalogger();
 }
@@ -91,25 +99,47 @@ int x = 1;
 
 public void draw() {
 
-  fill(42); stroke(50);
-  rect(0,0,140,100);
-  fill(255);
-  text("T="+temperature+" C", 10, 20);
-  text("H="+humidity+" %", 10, 40);
-  text("O="+ozonePPM+" ppm", 10, 60);
-  text("R="+ratio, 10, 80);
+  fill(42); stroke(80);
+  rect(0,0,width,100);
+  textSize(20);
+  fill(250,50,50);
+  text("T="+temperature+" C", 10, 25);
+  fill(50,250,50);
+  text("H="+humidity+" %", 10, 55);
+  fill(150,100,250);
+  text("O="+nf(ozonePPM,0,2)+" ppm", 10, 85);
+  // text("R="+ratio, 130, 25);
 
-  float t = map(temperature, 0, 100, height, 0);
+  stroke(128);
+  if (logEnabled) fill(128); else fill(60);
+  rect(width-110, 10, 100, 80);
+  fill(255);
+  text("LOG",width-80, 55);
+
+  noStroke();
+  for (int i=0; i<5; i++){
+    if (statusBits[i]) fill(255); else fill(0);
+    ellipse((i*50)+(3*width/8), 50, 20, 20);
+    fill(255);
+    textSize(12);
+    text(nameOfPeripherals[i],(i*50)+(3*width/8)-13, 85);
+  }
+
+  float t = map(temperature, 0, 100, height, 100);
   stroke(250,50,50); line(x-1,lastTempDisp,x,t);
   lastTempDisp = t;
 
-  float h = map(humidity,    0, 100, height, 0);
+  float h = map(humidity,    0, 100, height, 100);
   stroke(50,250,50); line(x-1,lastHumiDisp,x,h);
   lastHumiDisp = h;
 
-  float o = map(ozonePPM, 0, 1000, height, 0);
-  stroke(50,50,250); line(x-1,lastO3Disp,x,o);
+  float o = map(ozonePPM, 0, 1000, height, 100);
+  stroke(150,100,250); line(x-1,lastO3Disp,x,o);
   lastO3Disp = o;
+
+  float g = map(PApplet.parseInt(statusBits[0]), 0, 1, height, height/2);
+  stroke(255); line(x-1,lastGenDisp,x,g);
+  lastGenDisp = g;
 
   if (frameCount%10==0){
     x++;
@@ -274,7 +304,7 @@ datalogger file;
 
 public void beginLog(){
   file.beginSave();
-  file.add("TIME,PPM,TEMP,RH%,GEN,FAN,UVC,HUM,LOCK");
+  file.add("TIME,PPM,TEMP,RH%,GEN,FAN,UVC");
   logEnabled = true;
 }
 
@@ -432,7 +462,7 @@ public void process(UHR header, RingBuffer buffer) throws Exception {
     ozonePPM    = getFloat(data, ozoneIndex);
     ratio       = getFloat(data, ratioIndex);
     if (logEnabled){
-      file.add(hour()+":"+minute()+":"+second() +","+ ozonePPM +","+ temperature +","+ humidity);
+      file.add(hour()+":"+minute()+":"+second() +","+ ozonePPM +","+ temperature +","+ humidity + ",0,0,0");
     }
   } else
   if (header.packetID == PID_LOG) {
@@ -448,7 +478,11 @@ public void process(UHR header, RingBuffer buffer) throws Exception {
     }
 
     if (logEnabled){
-      file.add(hour()+":"+minute()+":"+second() +","+ ozonePPM +","+ temperature +","+ humidity);
+      file.add(
+        hour()+":"+minute()+":"+second() +","+
+        ozonePPM +","+ temperature +","+ humidity +","+
+        PApplet.parseInt(statusBits[0]) +","+ PApplet.parseInt(statusBits[1]) +","+ PApplet.parseInt(statusBits[2])
+      );
     }
   }
 }

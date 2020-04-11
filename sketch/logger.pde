@@ -2,7 +2,7 @@ datalogger file;
 
 void beginLog(){
   file.beginSave();
-  file.add("TIME,PPM,TEMP,RH%,GEN,FAN,UVC,HUM,LOCK");
+  file.add("TIME,PPM,TEMP,RH%,GEN,FAN,UVC");
   logEnabled = true;
 }
 

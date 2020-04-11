@@ -149,7 +149,7 @@ void process(UHR header, RingBuffer buffer) throws Exception {
     ozonePPM    = getFloat(data, ozoneIndex);
     ratio       = getFloat(data, ratioIndex);
     if (logEnabled){
-      file.add(hour()+":"+minute()+":"+second() +","+ ozonePPM +","+ temperature +","+ humidity);
+      file.add(hour()+":"+minute()+":"+second() +","+ ozonePPM +","+ temperature +","+ humidity + ",0,0,0");
     }
   } else
   if (header.packetID == PID_LOG) {
@@ -165,7 +165,11 @@ void process(UHR header, RingBuffer buffer) throws Exception {
     }
 
     if (logEnabled){
-      file.add(hour()+":"+minute()+":"+second() +","+ ozonePPM +","+ temperature +","+ humidity);
+      file.add(
+        hour()+":"+minute()+":"+second() +","+
+        ozonePPM +","+ temperature +","+ humidity +","+
+        int(statusBits[0]) +","+ int(statusBits[1]) +","+ int(statusBits[2])
+      );
     }
   }
 }
