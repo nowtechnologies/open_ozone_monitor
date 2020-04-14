@@ -4,7 +4,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 Serial  serialPort;
-String  portName = "ACM0";
+String  portName = "usbmodem";
 float   ozonePPM     = 0.0;
 float   temperature  = 0.0;
 float   humidity     = 0.0;
